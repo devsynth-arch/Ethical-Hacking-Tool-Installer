@@ -1,4 +1,4 @@
-#  Ethical Hacking Tool Installer for Arch Linux
+# devsyth-arch: Ethical Hacking Tool Installer for Arch Linux
 
 ## Description
 A powerful script to streamline the installation of ethical hacking tools on Arch Linux. Select your desired tools from the BlackArch repository with an interactive terminal checklist.

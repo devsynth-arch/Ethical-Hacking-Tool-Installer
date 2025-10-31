@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# devsyth-arch - A script to install ethical hacking tools from BlackArch
+# Author: devsyth
+
+# ---[ Colors ]---
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# ---[ Functions ]---
+
+# Function to print error messages and exit
+error() {
+    echo -e "${RED}[ERROR] $1${NC}"
+    exit 1
+}
+
+# Function to print informational messages
+info() {
+    echo -e "${GREEN}[INFO] $1${NC}"
+}
+
+# Function to print warning messages
+warning() {
+    echo -e "${YELLOW}[WARNING] $1${NC}"
+}
+
+# ---[ Main Script ]---
+
+# Check if running as root
+if [ "$(id -u)" -ne 0 ]; then
+    warning "This script should be run with sudo to install packages."
+    #error "Please run this script with sudo."
+fi
+
+# Check for dialog
+if ! command -v dialog &> /dev/null; then
+    error "'dialog' is not installed. Please install it with 'sudo pacman -S dialog'."
+fi
+
+# Add BlackArch repository if not already added
+if ! pacman -Sl blackarch &> /dev/null; then
+    info "Adding BlackArch repository..."
+    curl -O https://blackarch.org/strap.sh
+    if [ ! -f strap.sh ]; then
+        error "Failed to download strap.sh"
+    fi
+    chmod +x strap.sh
+    sudo ./strap.sh
+    rm strap.sh
+    info "BlackArch repository added."
+else
+    info "BlackArch repository already exists."
+fi
+
+# Update package database
+info "Updating package database..."
+sudo paru -Syu --noconfirm || error "Failed to update package database."
+
+# Get list of tools from BlackArch repository
+info "Fetching list of tools from BlackArch repository..."
+TOOLS=$(pacman -Sl blackarch | awk '{print $2 " \"" $4 "\""}' | sed 's/blackarch\///')
+
+# Create a temporary file for the checklist
+TEMPFILE=$(mktemp)
+
+# Convert the TOOLS string to a format suitable for dialog
+OLD_IFS=$IFS
+IFS=$'\n'
+for tool in $TOOLS; do
+    echo "$tool off" >> "$TEMPFILE"
+done
+IFS=$OLD_IFS
+
+# Show the checklist
+SELECTIONS=$(dialog --title "BlackArch Tool Installer by @devsyth" \
+                  --checklist "Select tools to install (use spacebar):" 40 120 30 \
+                  --file "$TEMPFILE" \
+                  2>&1 >/dev/tty)
+
+# Clear the screen
+clear
+
+# Check if the user made any selections
+if [ -z "$SELECTIONS" ]; then
+    info "No tools selected. Exiting."
+    rm "$TEMPFILE"
+    exit 0
+fi
+
+# Install the selected tools
+info "Installing selected tools..."
+sudo paru -S --noconfirm $SELECTIONS || error "Failed to install selected tools."
+
+info "Installation complete!"
+
+# Clean up
+rm "$TEMPFILE"
