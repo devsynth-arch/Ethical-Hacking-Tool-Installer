@@ -13,7 +13,7 @@ A powerful script to streamline the installation of ethical hacking tools on Arc
 1.  **Download the script:**
     ```bash
     git clone https://github.com/devsynth-arch/Ethical-Hacking-Tool-Installer.git
-    cd devsyth-arch
+    cd Ethical-Hacking-Tool-Installer
     ```
 2.  **Make it executable:**
     ```bash
